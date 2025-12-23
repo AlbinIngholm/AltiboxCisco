@@ -19,3 +19,44 @@ copy usbflash0:startup-config.txt flash:startup-config.txt
 ```
 
 **3:** Restart ruteren
+
+## Løsningen
+
+Løsningen går ut på å kunne bruke fiberen rett inn i egen ruter, uten å gå gjennom hjemmesentralen.
+
+Altibox bruker VLAN 101 for IPTV, og VLAN 102 for ren Internett-aksess.
+
+### WAN konfigurasjon:
+
+For å få en adresse av DHCP må vi enten spoofe mac-adressen på interfacet, eller sende DHCP options.
+
+Interface G0/0/0 er konfigurert som følger:
+
+```
+int g0/0/0
+ mac-address xxxx.xxxx.xxxx ! spoof mac på hjemmesentral
+ no ip address
+ no shutdown
+```
+
+Vi bruker subinterfaces for å trunke VLAN 101 og 102 over G0/0/0.
+
+#### G0/0/0.101
+
+```
+int g0/0/0.101
+ desc ** IPTV **
+ encapsulation dot1q 101
+ ip address dhcp
+ no shutdown
+```
+
+#### G0/0/0.102
+ 
+```
+int g0/0/0.102
+ desc ** Internett **
+ encapsulation dot1q 102
+ ip addreas dhcp
+ no shutdown
+```
