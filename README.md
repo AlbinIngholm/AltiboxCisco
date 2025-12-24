@@ -48,6 +48,7 @@ int g0/0/0.101
  desc ** IPTV **
  encapsulation dot1q 101
  ip address dhcp
+ ip nat outside
  no shutdown
 ```
 
@@ -57,6 +58,21 @@ int g0/0/0.101
 int g0/0/0.102
  desc ** Internett **
  encapsulation dot1q 102
- ip addreas dhcp
+ ip address dhcp
+ ip nat outside
  no shutdown
 ```
+
+VLAN 101 må settes opp med IGMP proxy for at IPTV skal fungere - mer info kommer.
+
+### LAN konfigurasjon:
+
+Til LAN brukes VLAN 67, og subnettet 192.168.67.0/24. Klienter vil bruke SVI-et til VLAN 67 som Gateway (192.168.67.254).
+
+Følgende servicer kjører også lokalt:
+
+** - DHCP**
+** - NAT**
+** - SSH**
+** - IGMP Proxy**
+** - Zone-Based Firewall**
