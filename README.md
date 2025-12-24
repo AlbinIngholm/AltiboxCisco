@@ -1,14 +1,13 @@
 # AltiboxCisco
 En guide for hvordan man kan sette opp en Cisco Ruter mot Altibox Fiber **uten** å bruke hjemmesentralen 
 
+Løsningen erstatter Altibox sin hjemmesentral (**FMG/VMG**) med en Cisco-ruter. Jeg har brukt en **C1121-8P**, så portene kan variere fra ruter til ruter.
+Altibox sin infrastruktur splitter IPTV og Internett trafikk i to separate VLAN på WAN-siden. Vi trunker dette til g0/0/0, og splitter det via subinterfaces.
 
-Løsningen gir en komplett ruter med følgende features:
+Altibox bruker VLAN 101 for IPTV, og VLAN 102 for ren Internett-aksess. Vi deler også LAN-siden i to VLAN, 84 og 85, og det gjøres PAT/NAT overloading mellom LAN og WAN trafikk.
 
-- **DHCP**
-- **NAT**
-- **SSH**
-- **IGMP Proxy**
-- **ACL-brannmur**
+IPTV signaler fra Altibox sendes som **Multicast**, så vi må bruke IGMP proxy. I tillegg er det konfigurert statiske ruter mot Altibox sine IPTV-tjenester. Man kan også bruke DHCP Option 121 for å installere rutene automatisk, men det er kjent for å være litt wonky på Cisco IOS, så her er det hardkodet.
+
 
 ## Topologi:
 ![Topologi](images/topologi.png)
@@ -35,13 +34,7 @@ copy usbflash0:startup-config.txt flash:startup-config.txt
 **4:** Kjør ``` crypto key generate rsa modulus 2048 ```
 
 ***
-## Løsningen:
 
-Løsningen går ut på å kunne bruke fiberen rett inn i egen ruter, uten å gå gjennom hjemmesentralen.
-
-Altibox bruker VLAN 101 for IPTV, og VLAN 102 for ren Internett-aksess.
-
-&nbsp;
 
 ### WAN konfigurasjon:
 
@@ -80,7 +73,7 @@ int g0/0/0.102
  no shutdown
 ```
 
-VLAN 101 må settes opp med IGMP proxy for at IPTV skal fungere - mer info kommer.
+VLAN 101 må settes opp med IGMP proxy for at IPTV skal fungere.
 
 ### LAN konfigurasjon:
 
