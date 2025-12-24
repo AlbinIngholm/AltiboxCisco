@@ -1,7 +1,7 @@
 # AltiboxCisco
-En guide for hvordan man kan sette opp en Cisco Ruter mot Altibox Fiber **uten** å bruke hjemmesentralen 
+En guide for hvordan man kan sette opp en Cisco Ruter mot Altibox Fiber **uten** å bruke hjemmesentralen
 
-Løsningen erstatter Altibox sin hjemmesentral (**FMG/VMG**) med en Cisco-ruter. Jeg har brukt en **C1121-8P**, så portene kan variere fra ruter til ruter.
+Løsningen erstatter Altibox sin hjemmesentral (**FMG/VMG**) med en Cisco-ruter. Jeg har brukt en **C1121-8P**, navnet på portene kan variere fra ruter til ruter.
 Altibox sin infrastruktur splitter IPTV og Internett trafikk i to separate VLAN på WAN-siden. Vi trunker dette til g0/0/0, og splitter det via subinterfaces.
 
 Altibox bruker VLAN 101 for IPTV, og VLAN 102 for ren Internett-aksess. Vi deler også LAN-siden i to VLAN, 84 og 85, og det gjøres PAT/NAT overloading mellom LAN og WAN trafikk.
@@ -55,21 +55,31 @@ Vi bruker subinterfaces for å trunke VLAN 101 og 102 over G0/0/0.
 
 ```
 int g0/0/0.101
- desc ** IPTV **
- encapsulation dot1q 101
+ description ** IPTV mot Altibox **
+ encapsulation dot1Q 101
+ ip dhcp client class-id VMG8825-B50B
+ ip dhcp client request classless-static-route
  ip address dhcp
  ip nat outside
+ ip access-group WAN-IPTV-IN in
+ ip igmp proxy-service
  no shutdown
 ```
 
 #### G0/0/0.102
  
 ```
-int g0/0/0.102
- desc ** Internett **
- encapsulation dot1q 102
+interface g0/0/0.102
+ description ** Internet mot Altibox **
+ encapsulation dot1Q 102
  ip address dhcp
  ip nat outside
+ ip access-group WAN-INTERNET-IN in
+ ipv6 address dhcp
+ ipv6 enable
+ ipv6 dhcp client pd PREFIX-DELEGATION
+ ipv6 traffic-filter WAN-IPV6-IN in
+ ipv6 inspect FIREWALL-V6 out
  no shutdown
 ```
 
