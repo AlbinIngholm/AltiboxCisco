@@ -1,5 +1,15 @@
 # AltiboxCisco
-En guide for hvordan man kan sette opp en Cisco Ruter mot Altibox Fiber uten å bruke hjemmesentralen
+En guide for hvordan man kan sette opp en Cisco Ruter mot Altibox Fiber **uten** å bruke hjemmesentralen 
+
+
+Løsningen gir en komplett ruter med følgende features:
+
+- **DHCP**
+- **NAT**
+- **SSH**
+- **IGMP Proxy**
+- **ACL-brannmur**
+
 
 ## Du trenger:
 
@@ -20,11 +30,16 @@ copy usbflash0:startup-config.txt flash:startup-config.txt
 
 **3:** Restart ruteren
 
-## Løsningen
+**4:** Kjør ``` crypto key generate rsa modulus 2048 ```
+
+***
+## Løsningen:
 
 Løsningen går ut på å kunne bruke fiberen rett inn i egen ruter, uten å gå gjennom hjemmesentralen.
 
 Altibox bruker VLAN 101 for IPTV, og VLAN 102 for ren Internett-aksess.
+
+&nbsp;
 
 ### WAN konfigurasjon:
 
@@ -67,12 +82,42 @@ VLAN 101 må settes opp med IGMP proxy for at IPTV skal fungere - mer info komme
 
 ### LAN konfigurasjon:
 
-Til LAN brukes VLAN 67, og subnettet 192.168.67.0/24. Klienter vil bruke SVI-et til VLAN 67 som Gateway (192.168.67.254).
+Til LAN Internett brukes VLAN 85, og subnettet 192.168.85.0/24. Klienter vil bruke SVI-et til VLAN 85 som Gateway (192.168.85.254).
+Til LAN IPTV brukes VLAN 84, og subnettet 192.168.84.0/24. Klienter vil bruke SVI-et til VLAN 84 som Gateway (192.168.84.254).
 
-Følgende servicer kjører også lokalt:
+#### VLAN 85 SVI
 
-- **DHCP**
-- **NAT**
-- **SSH**
-- **IGMP Proxy**
-- **Zone-Based Firewall**
+```
+int Vlan 85
+ desc ** LAN Internett Gateway **
+ ip address 192.168.85.254 255.255.255.0
+ ip nat inside
+```
+
+#### VLAN 84 SVI
+
+```
+int Vlan 84
+ desc ** LAN IPTV Gateway **
+ ip address 192.168.84.254 255.255.255.0
+ ip nat inside
+ ip igmp mroute-proxy GigabitEthernet0/0/0.101
+```
+
+#### LAN Internett Port
+
+```
+int gi0/1/0
+ desc ** LAN Internett **
+ switchport mode access
+ switchport access vlan 85
+ no shutdown
+```
+#### LAN IPTV Port
+```
+int gi0/1/1
+ desc ** LAN IPTV **
+ switchport mode access
+ switchport access vlan 84
+ no shutdown
+```

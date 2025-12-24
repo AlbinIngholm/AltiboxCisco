@@ -1,1 +1,177 @@
-! Startup-config
+! ==============================================================================
+! CISCO C1121-8P KONFIGURASJON FOR ALTIBOX
+! ==============================================================================
+service timestamps debug datetime msec
+service timestamps log datetime msec
+hostname R1
+
+ipv6 unicast-routing
+ip multicast-routing
+
+! BYTT UT "REDACTED" MED DITT PASSORD!
+username admin privilege 15 secret REDACTED
+
+ip ssh version 2
+ip domain-name home.local
+
+line vty 0 15
+ transport input ssh
+ login local
+ 
+! ==============================================================================
+! NTP og tid
+! ==============================================================================
+clock timezone CET 1
+clock summer-time CEST recurring last Sunday March 02:00 last Sunday October 03:00
+ntp server no.pool.ntp.org
+
+! ==============================================================================
+! VLAN
+! ==============================================================================
+vlan 85
+ name LAN-Internett
+!
+vlan 84
+ name LAN-IPTV
+!
+! ==============================================================================
+! DHCP
+! ==============================================================================
+! LAN (Internett)
+ip dhcp pool LAN-INTERNETT
+ network 192.168.85.0 255.255.255.0
+ default-router 192.168.85.254
+ dns-server 8.8.8.8 8.8.4.4
+!
+! LAN (IPTV)
+ip dhcp pool LAN-IPTV
+ network 192.168.84.0 255.255.255.0
+ default-router 192.168.84.254
+ dns-server 192.168.84.254
+ option 43 ascii "Altibox-TMS-Server-Address:https://tmc.services.altibox.net:37084/acs"
+!
+! ==============================================================================
+! ACL
+! ==============================================================================
+!
+ip access-list extended WAN-INTERNET-IN
+ permit udp any eq bootps any eq bootpc
+ permit tcp any any established
+ permit udp any any range 1024 65535
+ deny   ip any any log
+!
+ip access-list extended WAN-IPTV-IN
+ permit igmp any any
+ permit udp any any eq 5501
+ permit ip 85.0.0.0 0.255.255.255 any
+ permit ip 172.16.0.0 0.15.255.255 any
+ permit ip 172.21.0.0 0.0.255.255 any
+ deny ip any any
+!
+ipv6 access-list WAN-IPV6-IN
+ permit icmpv6 any any
+ permit udp any eq 547 any eq 546
+ evaluate REFLECT-V6
+ deny ipv6 any any log
+!
+ipv6 inspect name FIREWALL-V6 tcp
+ipv6 inspect name FIREWALL-V6 udp
+ipv6 inspect name FIREWALL-V6 icmp
+!
+
+! ==============================================================================
+! WAN Interfaces
+! ==============================================================================
+interface GigabitEthernet0/0/0
+ description ** Trunk mot Altibox **
+ mac-address xxxx.xxxx.xxxx ! Bytt ut med din MAC-address
+ no ip address
+ no shutdown
+!
+interface GigabitEthernet0/0/0.101
+ description ** IPTV mot Altibox **
+ encapsulation dot1Q 101
+ ip dhcp client class-id VMG8825-B50B
+ ip dhcp client request classless-static-route
+ ip address dhcp
+ ip nat outside
+ ip access-group WAN-IPTV-IN in
+ ip igmp proxy-service
+ no shutdown
+!
+interface GigabitEthernet0/0/0.102
+ description ** Internet mot Altibox **
+ encapsulation dot1Q 102
+ ip address dhcp
+ ip nat outside
+ ip access-group WAN-INTERNET-IN in
+ ipv6 address dhcp
+ ipv6 enable
+ ipv6 dhcp client pd PREFIX-DELEGATION
+ ipv6 traffic-filter WAN-IPV6-IN in
+ ipv6 inspect FIREWALL-V6 out
+ no shutdown
+!
+
+! ==============================================================================
+! LAN Interfaces
+! ==============================================================================
+interface Vlan85
+ description LAN-INTERNETT-GW
+ ip address 192.168.85.254 255.255.255.0
+ ip nat inside
+ ipv6 address PREFIX-DELEGATION ::1/64
+ ipv6 enable
+!
+interface Vlan84
+ description LAN-IPTV-GW
+ ip address 192.168.84.254 255.255.255.0
+ ip nat inside
+ ip igmp mroute-proxy GigabitEthernet0/0/0.101
+!
+!
+! ==============================================================================
+! Switchports
+! ==============================================================================
+interface GigabitEthernet0/1/0
+ description LAN-INTERNETT
+ switchport mode access
+ switchport access vlan 85
+ no shutdown
+!
+interface GigabitEthernet0/1/1
+ description LAN-IPTV
+ switchport mode access
+ switchport access vlan 84
+ no shutdown
+!
+
+! ==============================================================================
+! Static routes og NAT
+! ==============================================================================
+!
+ip access-list extended NAT-INTERNETT
+ permit ip 192.168.85.0 0.0.0.255 any
+!
+ip access-list extended NAT-IPTV
+ permit ip 192.168.84.0 0.0.0.255 any
+!
+ip nat inside source list NAT-INTERNETT interface GigabitEthernet0/0/0.102 overload
+ip nat inside source list NAT-IPTV interface GigabitEthernet0/0/0.101 overload
+!
+ip route 85.133.0.0 255.255.0.0 GigabitEthernet0/0/0.101 dhcp
+ip route 81.166.112.0 255.255.255.248 GigabitEthernet0/0/0.101 dhcp
+ip route 81.166.113.0 255.255.255.0 GigabitEthernet0/0/0.101 dhcp
+ip route 84.234.844.0 255.255.254.0 GigabitEthernet0/0/0.101 dhcp
+ip route 84.234.250.128 255.255.255.128 GigabitEthernet0/0/0.101 dhcp
+ip route 859.247.114.847 255.255.255.255 GigabitEthernet0/0/0.101 dhcp
+ip route 859.247.114.849 255.255.255.255 GigabitEthernet0/0/0.101 dhcp
+ip route 859.247.114.217 255.255.255.255 GigabitEthernet0/0/0.101 dhcp
+ip route 859.247.116.128 255.255.255.224 GigabitEthernet0/0/0.101 dhcp
+ip route 859.247.117.0 255.255.255.128 GigabitEthernet0/0/0.101 dhcp
+ip route 859.247.118.0 255.255.255.0 GigabitEthernet0/0/0.101 dhcp
+ip route 172.16.4.0 255.255.252.0 GigabitEthernet0/0/0.101 dhcp
+ip route 172.21.0.0 255.255.0.0 GigabitEthernet0/0/0.101 dhcp
+ip route 213.167.98.0 255.255.255.192 GigabitEthernet0/0/0.101 dhcp
+!
+end
