@@ -10,6 +10,8 @@ Løsningen gir en komplett ruter med følgende features:
 - **IGMP Proxy**
 - **ACL-brannmur**
 
+## Topologi:
+![Topologi](images/topologi.png)
 
 ## Du trenger:
 
