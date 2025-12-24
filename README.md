@@ -71,8 +71,8 @@ Til LAN brukes VLAN 67, og subnettet 192.168.67.0/24. Klienter vil bruke SVI-et 
 
 Følgende servicer kjører også lokalt:
 
-** - DHCP**
-** - NAT**
-** - SSH**
-** - IGMP Proxy**
-** - Zone-Based Firewall**
+- **DHCP**
+- **NAT**
+- **SSH**
+- **IGMP Proxy**
+- **Zone-Based Firewall**
